@@ -48,7 +48,7 @@ class AuthenticationController extends AbstractController {
   }
 
   private async signup(req: Request, res: Response) {
-    const { email, password, name, lastName } = req.body;
+    const { email, password} = req.body;
     try {
       // Crear el usuario de cognito
       const user = await this.cognitoService.signUpUser(email, password, [
@@ -61,10 +61,8 @@ class AuthenticationController extends AbstractController {
       const created_user: HydratedDocument<IUser> | null =
         await this._model.create(
           new UserModel({
-            name: name,
-            lastName: lastName,
-            email: email,
-            awsCognito: user.UserSub,
+            correo: email,
+            cognitoId: user.UserSub,
           })
         );
 
