@@ -139,7 +139,7 @@ class UserController extends AbstractController {
       const { ingreso } = req.body;
 
       const user: HydratedDocument<IUser> | null = await this._model.findOne({
-        email: correo,
+        correo: correo,
       });
 
       if (!user) {
@@ -165,7 +165,7 @@ class UserController extends AbstractController {
       const { deuda } = req.body;
 
       const user: HydratedDocument<IUser> | null = await this._model.findOne({
-        email: correo,
+        correo: correo,
       });
 
       if (!user) {
