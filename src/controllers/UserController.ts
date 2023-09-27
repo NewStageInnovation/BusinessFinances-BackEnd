@@ -61,7 +61,7 @@ class UserController extends AbstractController {
       const { correo } = req.params;
 
       const user: HydratedDocument<IUser> | null = await this._model.findOne({
-        email: correo,
+        correo: correo,
       });
 
       if (!user) {
@@ -78,7 +78,7 @@ class UserController extends AbstractController {
       const { correo } = req.params;
 
       const user: HydratedDocument<IUser> | null = await this._model.findOne({
-        email: correo,
+        correo: correo,
       });
 
       if (!user) {
@@ -95,7 +95,7 @@ class UserController extends AbstractController {
       const { correo } = req.params;
 
       const user: HydratedDocument<IUser> | null = await this._model.findOne({
-        email: correo,
+        correo: correo,
       });
 
       if (!user) {
@@ -113,7 +113,7 @@ class UserController extends AbstractController {
       const { gasto } = req.body;
 
       const user: HydratedDocument<IUser> | null = await this._model.findOne({
-        email: correo,
+        correo: correo,
       });
 
       if (!user) {
