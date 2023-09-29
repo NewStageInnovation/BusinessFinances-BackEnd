@@ -24,11 +24,13 @@ class UserController extends AbstractController {
   }
 
   protected initRoutes(): void {
-    this.router.post("/getUser", this.getUser.bind(this));
+    this.router.get("/getUser/:correo", this.getUser.bind(this));
     this.router.get("/getGastos/:correo", this.getGastos.bind(this));
     this.router.get("/getIngresos/:correo", this.getIngresos.bind(this));
     this.router.get("/getDeudas/:correo", this.getDeudas.bind(this));
     this.router.get("/getGastosActivos/:correo", this.getGastosActivos.bind(this));
+    this.router.get("/getGastosPasivos/:correo", this.getGastosPasivos.bind(this));
+    this.router.get("/getCapital/:correo", this.getCapital.bind(this));
     this.router.post("/addGasto/:correo", this.addGasto.bind(this));
     this.router.post("/addIngreso/:correo", this.addIngreso.bind(this));
     this.router.post("/addDeuda/:correo", this.addDeuda.bind(this));
@@ -42,10 +44,10 @@ class UserController extends AbstractController {
 
   private async getUser(req: Request, res: Response) {
     try {
-      const { email } = req.body;
+      const { correo } = req.params;
 
       const user: HydratedDocument<IUser> | null = await this._model.findOne({
-        correo: email,
+        correo: correo,
       });
 
       if (!user) {
@@ -111,6 +113,7 @@ class UserController extends AbstractController {
   private async getGastosActivos(req: Request, res: Response) {
     try {
       const { correo } = req.params;
+      let gastosActivos = 0;
 
       const user: HydratedDocument<IUser> | null = await this._model.findOne({
         correo: correo,
@@ -120,13 +123,65 @@ class UserController extends AbstractController {
         throw "Failed to find user";
       }
 
-      const gastosActivos = user.gastos.filter(
-        (gasto: any) => {
-          return gasto.categoria.toUpperCase() === "ACTIVO";
+      user.gastos.forEach((gasto: any) => {
+        if (gasto.categoria.toUpperCase() === "ACTIVO") {
+          gastosActivos += gasto.cantidad;
         }
-      );
+      });
 
-      res.status(200).send({ gastos: gastosActivos });
+      res.status(200).send({ gastosActivos: gastosActivos });
+    } catch (error: any) {
+      res.status(500).send({ code: error.code, message: error.message });
+    }
+  }
+
+  private async getGastosPasivos(req: Request, res: Response) {
+    try {
+      const { correo } = req.params;
+      let gastosPasivos = 0;
+
+      const user: HydratedDocument<IUser> | null = await this._model.findOne({
+        correo: correo,
+      });
+
+      if (!user) {
+        throw "Failed to find user";
+      }
+
+       user.gastos.forEach((gasto: any) => {
+        if (gasto.categoria.toUpperCase() === "PASIVO") {
+          gastosPasivos += gasto.cantidad;
+        }
+        });
+
+      res.status(200).send({ gastosPasivos: gastosPasivos });
+    } catch (error: any) {
+      res.status(500).send({ code: error.code, message: error.message });
+    }
+  }
+
+  private async getCapital(req: Request, res: Response) {
+    try {
+      const { correo } = req.params;
+      let capital = 0;
+
+      const user: HydratedDocument<IUser> | null = await this._model.findOne({
+        correo: correo,
+      });
+
+      if (!user) {
+        throw "Failed to find user";
+      }
+
+      user.ingresos.forEach((ingreso: any) => {
+        capital += ingreso.cantidad;
+      });
+
+      user.gastos.forEach((gasto: any) => {
+        capital -= gasto.cantidad;
+      });
+
+      res.status(200).send({ capital: capital });
     } catch (error: any) {
       res.status(500).send({ code: error.code, message: error.message });
     }
