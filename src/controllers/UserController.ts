@@ -31,6 +31,7 @@ class UserController extends AbstractController {
     this.router.get("/getGastosActivos/:correo", this.getGastosActivos.bind(this));
     this.router.get("/getGastosPasivos/:correo", this.getGastosPasivos.bind(this));
     this.router.get("/getCapital/:correo", this.getCapital.bind(this));
+    this.router.get("/getPatrimonioNeto/:correo", this.getPatrimonioNeto.bind(this));
     this.router.post("/addGasto/:correo", this.addGasto.bind(this));
     this.router.post("/addIngreso/:correo", this.addIngreso.bind(this));
     this.router.post("/addDeuda/:correo", this.addDeuda.bind(this));
@@ -148,11 +149,10 @@ class UserController extends AbstractController {
         throw "Failed to find user";
       }
 
-       user.gastos.forEach((gasto: any) => {
-        if (gasto.categoria.toUpperCase() === "PASIVO") {
-          gastosPasivos += gasto.cantidad;
-        }
-        });
+      user.deudas.forEach((deuda: any) => {
+        let monto = (deuda.monto * (1 + deuda.interes / 100)) / deuda.plazos;
+        gastosPasivos -= monto;
+      });
 
       res.status(200).send({ gastosPasivos: gastosPasivos });
     } catch (error: any) {
@@ -182,6 +182,37 @@ class UserController extends AbstractController {
       });
 
       res.status(200).send({ capital: capital });
+    } catch (error: any) {
+      res.status(500).send({ code: error.code, message: error.message });
+    }
+  }
+
+  private async getPatrimonioNeto(req: Request, res: Response) {
+    try {
+      const { correo } = req.params;
+      let patrimonioNeto = 0;
+
+      const user: HydratedDocument<IUser> | null = await this._model.findOne({
+        correo: correo,
+      });
+
+      if (!user) {
+        throw "Failed to find user";
+      }
+
+      user.ingresos.forEach((ingreso: any) => {
+        patrimonioNeto += ingreso.cantidad;
+      });
+
+      user.gastos.forEach((gasto: any) => {
+        patrimonioNeto -= gasto.cantidad;
+      });
+
+      user.deudas.forEach((deuda: any) => {
+        patrimonioNeto -= deuda.monto;
+      });
+
+      res.status(200).send({ patrimonioNeto: patrimonioNeto });
     } catch (error: any) {
       res.status(500).send({ code: error.code, message: error.message });
     }
