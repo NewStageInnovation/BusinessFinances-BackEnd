@@ -28,6 +28,7 @@ class UserController extends AbstractController {
     this.router.get("/getGastos/:correo", this.getGastos.bind(this));
     this.router.get("/getIngresos/:correo", this.getIngresos.bind(this));
     this.router.get("/getDeudas/:correo", this.getDeudas.bind(this));
+    this.router.get("/getGastosActivos/:correo", this.getGastosActivos.bind(this));
     this.router.post("/addGasto/:correo", this.addGasto.bind(this));
     this.router.post("/addIngreso/:correo", this.addIngreso.bind(this));
     this.router.post("/addDeuda/:correo", this.addDeuda.bind(this));
@@ -44,7 +45,7 @@ class UserController extends AbstractController {
       const { email } = req.body;
 
       const user: HydratedDocument<IUser> | null = await this._model.findOne({
-        email: email,
+        correo: email,
       });
 
       if (!user) {
@@ -102,6 +103,30 @@ class UserController extends AbstractController {
         throw "Failed to find user";
       }
       res.status(200).send({ deudas: user.deudas });
+    } catch (error: any) {
+      res.status(500).send({ code: error.code, message: error.message });
+    }
+  }
+
+  private async getGastosActivos(req: Request, res: Response) {
+    try {
+      const { correo } = req.params;
+
+      const user: HydratedDocument<IUser> | null = await this._model.findOne({
+        correo: correo,
+      });
+
+      if (!user) {
+        throw "Failed to find user";
+      }
+
+      const gastosActivos = user.gastos.filter(
+        (gasto: any) => {
+          return gasto.categoria.toUpperCase() === "ACTIVO";
+        }
+      );
+
+      res.status(200).send({ gastos: gastosActivos });
     } catch (error: any) {
       res.status(500).send({ code: error.code, message: error.message });
     }
