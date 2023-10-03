@@ -38,6 +38,7 @@ class UserController extends AbstractController {
     this.router.post("/addGasto/:correo", this.addGasto.bind(this));
     this.router.post("/addIngreso/:correo", this.addIngreso.bind(this));
     this.router.post("/addDeuda/:correo", this.addDeuda.bind(this));
+    this.router.post("/createUser", this.createUser.bind(this));
     this.router.delete("/deleteGasto/:correo/:id", this.deleteGasto.bind(this));
     this.router.delete("/deleteIngreso/:correo/:id", this.deleteIngreso.bind(this));
     this.router.delete("/deleteDeuda/:correo/:id", this.deleteDeuda.bind(this));
@@ -353,6 +354,31 @@ class UserController extends AbstractController {
       margenCapital = Math.round(patrimonioNeto / ingresos * 100);
 
       res.status(200).send({ margenCapital: margenCapital });
+    } catch (error: any) {
+      res.status(500).send({ code: error.code, message: error.message });
+    }
+  }
+
+  private async createUser (req: Request, res: Response) {
+    try {
+      const { correo, cognitoId } = req.body;
+
+      const user: HydratedDocument<IUser> | null = await this._model.findOne({
+        correo: correo,
+      });
+
+      if (user) {
+        throw "User already exists";
+      }
+
+      const newUser : HydratedDocument<IUser> = new UserModel({
+        correo: correo,
+        cognitoId: cognitoId
+      });
+
+      await newUser.save();
+
+      res.status(200).send({ user: newUser });
     } catch (error: any) {
       res.status(500).send({ code: error.code, message: error.message });
     }
