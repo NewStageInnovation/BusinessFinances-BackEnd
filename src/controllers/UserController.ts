@@ -32,6 +32,9 @@ class UserController extends AbstractController {
     this.router.get("/getGastosPasivos/:correo", this.getGastosPasivos.bind(this));
     this.router.get("/getCapital/:correo", this.getCapital.bind(this));
     this.router.get("/getPatrimonioNeto/:correo", this.getPatrimonioNeto.bind(this));
+    this.router.get("/getRazonEndeudamiento/:correo", this.getRazonEndeudamiento.bind(this));
+    this.router.get("/getApalancamientoFinanciero/:correo", this.getApalancamientoFinanciero.bind(this));
+    this.router.get("/getMargenCapital/:correo", this.getMargenCapital.bind(this));
     this.router.post("/addGasto/:correo", this.addGasto.bind(this));
     this.router.post("/addIngreso/:correo", this.addIngreso.bind(this));
     this.router.post("/addDeuda/:correo", this.addDeuda.bind(this));
@@ -181,6 +184,10 @@ class UserController extends AbstractController {
         capital -= gasto.cantidad;
       });
 
+      user.deudas.forEach((deuda: any) => {
+        capital += deuda.monto;
+      });
+
       res.status(200).send({ capital: capital });
     } catch (error: any) {
       res.status(500).send({ code: error.code, message: error.message });
@@ -213,6 +220,139 @@ class UserController extends AbstractController {
       });
 
       res.status(200).send({ patrimonioNeto: patrimonioNeto });
+    } catch (error: any) {
+      res.status(500).send({ code: error.code, message: error.message });
+    }
+  }
+
+  private async getRazonEndeudamiento(req: Request, res: Response) {
+    try {
+      const { correo } = req.params;
+      let razonEndeudamiento = 0;
+      let ingresos = 0;
+      let deudas = 0;
+
+      const user: HydratedDocument<IUser> | null = await this._model.findOne({
+        correo: correo,
+      });
+
+      if (!user) {
+        throw "Failed to find user";
+      }
+
+      user.ingresos.forEach((ingreso: any) => {
+        ingresos += ingreso.cantidad;
+      });
+
+      user.deudas.forEach((deuda: any) => {
+        deudas += deuda.monto;
+      });
+
+      razonEndeudamiento = Math.round(deudas / ingresos * 100);
+
+      res.status(200).send({ razonEndeudamiento: razonEndeudamiento });
+    } catch (error: any) {
+      res.status(500).send({ code: error.code, message: error.message });
+    }
+  }
+
+  private async getApalancamientoFinanciero(req: Request, res: Response) {
+    try {
+      const { correo } = req.params;
+      let apalancamientoFinanciero = 0;
+      let ingresos = 0;
+      let deudas = 0;
+      let patrimonioNeto = 0;
+      let capital = 0;
+      let gastosPasivos = 0;
+
+      const user: HydratedDocument<IUser> | null = await this._model.findOne({
+        correo: correo,
+      });
+      
+      if (!user) {
+        throw "Failed to find user";
+      }
+
+      user.ingresos.forEach((ingreso: any) => {
+        ingresos += ingreso.cantidad;
+      });
+
+      user.deudas.forEach((deuda: any) => {
+        deudas += deuda.monto;
+      });
+
+      user.gastos.forEach((gasto: any) => {
+        gastosPasivos -= gasto.cantidad;
+      });
+
+      user.ingresos.forEach((ingreso: any) => {
+        capital += ingreso.cantidad;
+      });
+
+      user.gastos.forEach((gasto: any) => {
+        capital -= gasto.cantidad;
+      });
+
+      user.deudas.forEach((deuda: any) => {
+        capital += deuda.monto;
+      });
+
+      patrimonioNeto = capital - deudas;
+      apalancamientoFinanciero = Math.round(patrimonioNeto / capital * 100);
+
+      res.status(200).send({ apalancamientoFinanciero: apalancamientoFinanciero });
+    } catch (error: any) {
+      res.status(500).send({ code: error.code, message: error.message });
+    }
+  }
+
+  private async getMargenCapital(req: Request, res: Response) {
+    try {
+      const { correo } = req.params;
+      let margenCapital = 0;
+      let ingresos = 0;
+      let deudas = 0;
+      let patrimonioNeto = 0;
+      let capital = 0;
+      let gastosPasivos = 0;
+
+      const user: HydratedDocument<IUser> | null = await this._model.findOne({
+        correo: correo,
+      });
+      
+      if (!user) {
+        throw "Failed to find user";
+      }
+
+      user.ingresos.forEach((ingreso: any) => {
+        ingresos += ingreso.cantidad;
+      });
+
+      user.deudas.forEach((deuda: any) => {
+        deudas += deuda.monto;
+      });
+
+      user.gastos.forEach((gasto: any) => {
+        gastosPasivos -= gasto.cantidad;
+      });
+
+      user.ingresos.forEach((ingreso: any) => {
+        capital += ingreso.cantidad;
+      });
+
+      user.gastos.forEach((gasto: any) => {
+        capital -= gasto.cantidad;
+      });
+
+      user.deudas.forEach((deuda: any) => {
+        capital += deuda.monto;
+      });
+
+      patrimonioNeto = capital - deudas;
+      margenCapital = Math.round(patrimonioNeto / ingresos * 100);
+
+      res.status(200).send({ margenCapital: margenCapital });
     } catch (error: any) {
       res.status(500).send({ code: error.code, message: error.message });
     }
